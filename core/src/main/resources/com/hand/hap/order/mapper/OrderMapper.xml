@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hand.hap.order.mapper.OrderMapper">
+    <resultMap id="BaseResultMap" type="com.hand.hap.order.dto.Order">
+        <result column="HEADER_ID" property="headerId" jdbcType="DECIMAL" />
+        <result column="ORDER_NUMBER" property="orderNumber" jdbcType="VARCHAR" />
+        <result column="COMPANY_ID" property="companyId" jdbcType="DECIMAL" />
+        <result column="COMPANY_NAME" property="companyName" jdbcType="VARCHAR" />
+        <result column="CUSTOMER_Id" property="customerId" jdbcType="DECIMAL" />
+        <result column="CUSTOMER_NAME" property="customerName" jdbcType="VARCHAR" />
+        <result column="ORDER_DATE" property="orderDate" jdbcType="DATE" />
+        <result column="ORDER_STATUS" property="orderStatus" jdbcType="VARCHAR" />
+        <result column="TOTAL" property="total" jdbcType="DECIMAL" />
+    </resultMap>
+    <select id="selectCollect" resultMap="BaseResultMap" parameterType="com.hand.hap.order.dto.Order">
+        select h.HEADER_ID,h.ORDER_NUMBER,c.COMPANY_ID,c.COMPANY_NAME,cu.CUSTOMER_Id,cu.CUSTOMER_NAME,h.ORDER_DATE,h.ORDER_STATUS,sum(l.ORDERD_QUANTITY*l.UNIT_SELLING_PRICE) TOTAL
+        from hap_om_order_headers h,hap_om_order_lines l,hap_org_companys c,hap_ar_customers cu,hap_inv_inventory_items inv
+        <where>
+            h.HEADER_ID=l.HEADER_ID and c.COMPANY_ID=h.COMPANY_ID and cu.COMPANY_ID =c.COMPANY_ID and h.CUSTOMER_ID = cu.CUSTOMER_ID and inv.INVENTORY_ITEM_ID=l.INVENTORY_ITEM_ID
+            <if test="companyId != null">
+                and c.COMPANY_ID = #{companyId}
+            </if>
+            <if test="customerId != null">
+                and cu.CUSTOMER_Id = #{customerId}
+            </if>
+            <if test="inventoryItemId != null">
+                and inv.INVENTORY_ITEM_ID = #{inventoryItemId}
+            </if>
+            <if test="orderNumber != null">
+                and h.ORDER_NUMBER = #{orderNumber}
+            </if>
+            <if test="orderStatus != null">
+                and h.ORDER_STATUS = #{orderStatus}
+            </if>
+            <if test="headerId !=null">
+                and h.HEADER_ID = #{headerId}
+            </if>
+        </where>
+        GROUP BY h.HEADER_ID
+    </select>
+
+    <select id="selectCollect2" resultMap="BaseResultMap" parameterType="com.hand.hap.order.dto.Order">
+       SELECT
+            h1.HEADER_ID HEADER_ID,
+            h1.ORDER_NUMBER ORDER_NUMBER,
+            h1.COMPANY_ID COMPANY_ID,
+            h2.COMPANY_NAME COMPANY_NAME,
+            h1.CUSTOMER_Id CUSTOMER_Id,
+            h2.CUSTOMER_NAME CUSTOMER_NAME,
+            h1.ORDER_DATE ORDER_DATE,
+            h1.ORDER_STATUS ORDER_STATUS,
+            h2.INVENTORY_ITEM_ID INVENTORY_ITEM_ID,
+            sum(h2.linePrice) TOTAL
+        FROM
+            hap_om_order_headers h1
+        LEFT JOIN (
+            SELECT
+                h.HEADER_ID HEADER_ID,
+                h.ORDER_NUMBER ORDER_NUMBER,
+                h.COMPANY_ID COMPANY_ID,
+                c.COMPANY_NAME COMPANY_NAME,
+                h.CUSTOMER_Id CUSTOMER_Id,
+                cu.CUSTOMER_NAME CUSTOMER_NAME,
+                h.ORDER_DATE ORDER_DATE,
+                h.ORDER_STATUS ORDER_STATUS,
+                inv.INVENTORY_ITEM_ID INVENTORY_ITEM_ID,
+                l.ORDERD_QUANTITY * l.UNIT_SELLING_PRICE linePrice
+            FROM
+                hap_om_order_headers h,
+                hap_om_order_lines l,
+                hap_org_companys c,
+                hap_ar_customers cu,
+                hap_inv_inventory_items inv
+            WHERE
+                h.HEADER_ID = l.HEADER_ID
+            AND h.COMPANY_ID = c.COMPANY_ID
+            AND h.CUSTOMER_ID = cu.CUSTOMER_ID
+            AND inv.INVENTORY_ITEM_ID = l.INVENTORY_ITEM_ID
+        ) h2 ON h1.HEADER_ID = h2.HEADER_ID
+        <where>
+            <if test="companyId != null">
+                and h1.COMPANY_ID = #{companyId}
+            </if>
+            <if test="customerId != null">
+                and h1.CUSTOMER_ID = #{customerId}
+            </if>
+            <if test="inventoryItemId != null">
+                and h2.INVENTORY_ITEM_ID = #{inventoryItemId}
+            </if>
+            <if test="orderNumber != null">
+                and h1.ORDER_NUMBER= #{orderNumber}
+            </if>
+            <if test="orderStatus != null">
+                and h1.ORDER_STATUS = #{orderStatus}
+            </if>
+            <if test="headerId !=null">
+                and h1.HEADER_ID  = #{headerId}
+            </if>
+        </where>
+        GROUP BY h1.HEADER_ID
+    </select>
+
+
+    <select id="selectCollect3" resultMap="BaseResultMap" parameterType="com.hand.hap.order.dto.Order">
+        select
+        h3.HEADER_ID HEADER_ID,
+        h3.ORDER_NUMBER ORDER_NUMBER,
+        h3.COMPANY_ID COMPANY_ID,
+        c2.COMPANY_NAME COMPANY_NAME,
+        h3.CUSTOMER_Id CUSTOMER_Id,
+        cu2.CUSTOMER_NAME CUSTOMER_NAME,
+        h3.ORDER_DATE ORDER_DATE,
+        h3.ORDER_STATUS ORDER_STATUS,
+        h3.INVENTORY_ITEM_ID INVENTORY_ITEM_ID,
+        h3.total
+        from(SELECT
+        h1.HEADER_ID HEADER_ID,
+        h1.ORDER_NUMBER ORDER_NUMBER,
+        h1.COMPANY_ID COMPANY_ID,
+        h2.COMPANY_NAME COMPANY_NAME,
+        h1.CUSTOMER_Id CUSTOMER_Id,
+        h2.CUSTOMER_NAME CUSTOMER_NAME,
+        h1.ORDER_DATE ORDER_DATE,
+        h1.ORDER_STATUS ORDER_STATUS,
+        h2.INVENTORY_ITEM_ID INVENTORY_ITEM_ID,
+        sum(h2.linePrice) total
+        FROM
+        hap_om_order_headers h1
+        LEFT JOIN (
+        SELECT
+        h.HEADER_ID HEADER_ID,
+        h.ORDER_NUMBER ORDER_NUMBER,
+        h.COMPANY_ID COMPANY_ID,
+        c.COMPANY_NAME COMPANY_NAME,
+        h.CUSTOMER_Id CUSTOMER_Id,
+        cu.CUSTOMER_NAME CUSTOMER_NAME,
+        h.ORDER_DATE ORDER_DATE,
+        h.ORDER_STATUS ORDER_STATUS,
+        inv.INVENTORY_ITEM_ID INVENTORY_ITEM_ID,
+        l.ORDERD_QUANTITY * l.UNIT_SELLING_PRICE linePrice
+        FROM
+        hap_om_order_headers h,
+        hap_om_order_lines l,
+        hap_org_companys c,
+        hap_ar_customers cu,
+        hap_inv_inventory_items inv
+        WHERE
+        h.HEADER_ID = l.HEADER_ID
+        AND h.COMPANY_ID = c.COMPANY_ID
+        AND h.CUSTOMER_ID = cu.CUSTOMER_ID
+        AND inv.INVENTORY_ITEM_ID = l.INVENTORY_ITEM_ID
+        ) h2 ON h1.HEADER_ID = h2.HEADER_ID
+        GROUP BY
+        h1.HEADER_ID) h3,hap_org_companys c2,hap_ar_customers cu2
+        where c2.COMPANY_ID =h3.COMPANY_ID and cu2.CUSTOMER_ID = h3.CUSTOMER_Id
+            <if test="companyId != null">
+                and h3.COMPANY_ID = #{companyId}
+            </if>
+            <if test="customerId != null">
+                and h3.CUSTOMER_ID = #{customerId}
+            </if>
+            <if test="inventoryItemId != null">
+                and h3.INVENTORY_ITEM_ID = #{inventoryItemId}
+            </if>
+            <if test="orderNumber != null">
+                and h3.ORDER_NUMBER= #{orderNumber}
+            </if>
+            <if test="orderStatus != null">
+                and h3.ORDER_STATUS = #{orderStatus}
+            </if>
+            <if test="headerId !=null">
+                and h3.HEADER_ID  = #{headerId}
+            </if>
+    </select>
+
+
+    <delete id="deleteOrder" parameterType="com.hand.hap.order.dto.Order" >
+        DELETE hap_om_order_headers,
+         hap_om_order_lines
+        FROM
+            hap_om_order_headers
+        LEFT JOIN hap_om_order_lines ON hap_om_order_headers.HEADER_ID = hap_om_order_lines.HEADER_ID
+        WHERE
+            hap_om_order_headers.HEADER_ID = #{headerId}
+    </delete>
+</mapper>
